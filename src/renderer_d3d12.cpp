@@ -925,7 +925,7 @@ namespace bgfx { namespace d3d12
 			initHeapProperties(m_device);
 
 			m_cmd.init(m_device);
-			m_device->SetPrivateDataInterface(IID_ID3D12CommandQueue, m_cmd.m_commandQueue);
+			m_device->SetPrivateDataInterface(IID_ID3D12CommandQueue, (const ::IUnknown*)m_cmd.m_commandQueue);
 			errorState = ErrorState::CreatedCommandQueue;
 
 			if (NULL == g_platformData.backBuffer)
