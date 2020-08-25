@@ -2847,6 +2847,7 @@ namespace bgfx
 		virtual RendererType::Enum getRendererType() const = 0;
 		virtual const char* getRendererName() const = 0;
 		virtual bool isDeviceRemoved() = 0;
+		virtual bool isDeviceSuspended() { return false; }
 		virtual void flip() = 0;
 		virtual void createIndexBuffer(IndexBufferHandle _handle, const Memory* _mem, uint16_t _flags) = 0;
 		virtual void destroyIndexBuffer(IndexBufferHandle _handle) = 0;
@@ -2887,6 +2888,8 @@ namespace bgfx
 		virtual void submit(Frame* _render, ClearQuad& _clearQuad, TextVideoMemBlitter& _textVideoMemBlitter) = 0;
 		virtual void blitSetup(TextVideoMemBlitter& _blitter) = 0;
 		virtual void blitRender(TextVideoMemBlitter& _blitter, uint32_t _numIndices) = 0;
+		virtual void SuspendX() {}
+		virtual void ResumeX() {}
 	};
 
 	inline RendererContextI::~RendererContextI()
@@ -2944,6 +2947,26 @@ namespace bgfx
 		// game thread
 		bool init(const Init& _init);
 		void shutdown();
+
+		void SuspendX()
+		{
+			if(m_renderCtx)
+			   m_renderCtx->SuspendX();
+		}
+
+		void ResumeX()
+		{
+			if(m_renderCtx)
+			   m_renderCtx->ResumeX();
+		}
+
+		bool isSuspended()
+		{
+			if (!m_renderCtx)
+				return false;
+
+			return m_renderCtx->isDeviceSuspended();
+		}
 
 		CommandBuffer& getCommandBuffer(CommandBuffer::Enum _cmd)
 		{

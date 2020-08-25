@@ -1417,10 +1417,33 @@ namespace bgfx
 		bx::radixSort(m_blitKeys, (uint32_t*)&s_ctx->m_tempKeys, m_numBlitItems);
 	}
 
+	void SuspendX()
+	{
+		if(s_ctx)
+		   s_ctx->SuspendX();
+	}
+
+	void ResumeX()
+	{
+		if(s_ctx)
+		   s_ctx->ResumeX();
+	}
+
+	bool isSuspended()
+	{
+		if (!s_ctx)
+			return false;
+
+		return s_ctx->isSuspended();
+	}
+
 	RenderFrame::Enum renderFrame(int32_t _msecs)
 	{
 		if (BX_ENABLED(BGFX_CONFIG_MULTITHREADED) )
 		{
+			if (isSuspended())
+				return RenderFrame::Render;
+
 			if (s_renderFrameCalled)
 			{
 				BGFX_CHECK_RENDER_THREAD();

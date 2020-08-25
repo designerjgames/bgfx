@@ -51,6 +51,10 @@ namespace bgfx
 	///
 	RenderFrame::Enum renderFrame(int32_t _msecs = -1);
 
+	void SuspendX();
+	void ResumeX();
+	bool isSuspended();
+
 	/// Set platform data.
 	///
 	/// @warning Must be called before `bgfx::init`.

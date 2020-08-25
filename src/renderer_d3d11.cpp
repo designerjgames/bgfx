@@ -4,6 +4,7 @@
  */
 
 #include "bgfx_p.h"
+#include <wrl/client.h>
 
 #if BGFX_CONFIG_RENDERER_DIRECT3D11
 #	include "renderer_d3d11.h"
@@ -666,6 +667,7 @@ namespace bgfx { namespace d3d11
 			, m_featureLevel(D3D_FEATURE_LEVEL(0) )
 			, m_swapChain(NULL)
 			, m_lost(false)
+			, m_suspended(false)
 			, m_numWindows(0)
 			, m_device(NULL)
 			, m_deviceCtx(NULL)
@@ -2060,6 +2062,8 @@ namespace bgfx { namespace d3d11
 		void submitBlit(BlitState& _bs, uint16_t _view);
 
 		void submit(Frame* _render, ClearQuad& _clearQuad, TextVideoMemBlitter& _textVideoMemBlitter) override;
+		void SuspendX() override;
+		void ResumeX() override;
 
 		void blitSetup(TextVideoMemBlitter& _blitter) override
 		{
@@ -2231,6 +2235,11 @@ namespace bgfx { namespace d3d11
 			return m_lost;
 		}
 
+		bool isDeviceSuspended() override
+		{
+			return m_suspended;
+		}
+
 		void flip() override
 		{
 			if (!m_lost)
@@ -2325,17 +2334,51 @@ namespace bgfx { namespace d3d11
 			}
 			else if (suspended)
 			{
-				m_deviceCtx->Flush();
-				m_deviceCtx->ClearState();
-				m_dxgi.trim();
-				suspend(m_device);
+				//m_deviceCtx->Flush();
+				//m_deviceCtx->ClearState();
+				//m_dxgi.trim();
+
+				Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
+				HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
+				//if (FAILED(hr))
+				//	return;
+
+				BX_TRACE("Suspend HR :%d", hr)
+
+				d3dContextX->Suspend(0);
+
+				BX_TRACE("Suspendaaaaayyyyyaaaaaaaaaaaad")
+
+
+
+				//suspend(m_device);
 				m_resolution.reset |= BGFX_RESET_SUSPEND;
+
+				m_suspended = true;
 				return true;
 			}
 			else if (wasSuspended)
 			{
 				resume(m_device);
+
+				//Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
+				//HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
+				////if (FAILED(hr))
+				////	return;
+
+				//BX_TRACE("Resume HR :%d", hr)
+
+				//d3dContextX->Resume();
+
+				//m_deviceCtx->Flush();
+				//m_deviceCtx->ClearState();
+				//m_dxgi.trim();
+
+				BX_TRACE("Resumeeeeeeeeeeeeeeeeed")
+
 				m_resolution.reset &= ~BGFX_RESET_SUSPEND;
+
+				//m_suspended = false;
 			}
 
 			uint32_t maxAnisotropy = 1;
@@ -3443,6 +3486,7 @@ namespace bgfx { namespace d3d11
 
 		bool m_needPresent;
 		bool m_lost;
+		bool m_suspended;
 		uint16_t m_numWindows;
 		FrameBufferHandle m_windows[BGFX_CONFIG_MAX_FRAME_BUFFERS];
 
@@ -5306,6 +5350,30 @@ namespace bgfx { namespace d3d11
 					);
 			}
 		}
+	}
+
+	void RendererContextD3D11::SuspendX()
+	{
+		Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
+		HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
+		if (FAILED(hr))
+			return;
+
+		d3dContextX->Suspend(0);
+	}
+
+	void RendererContextD3D11::ResumeX()
+	{
+		Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
+		HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
+		if (FAILED(hr))
+			return;
+
+		BX_TRACE("RendererContextD3D11::ResumeX HR :%d", hr);
+
+		d3dContextX->Resume();
+		BX_TRACE("RendererContextD3D11::ResumeeeeeeeeeeeeeeX HR");
+		m_suspended = false;
 	}
 
 	void RendererContextD3D11::submit(Frame* _render, ClearQuad& _clearQuad, TextVideoMemBlitter& _textVideoMemBlitter)
