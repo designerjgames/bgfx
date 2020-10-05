@@ -932,7 +932,7 @@ namespace bgfx
 	};
 
 	//
-	constexpr uint8_t  kSortKeyViewNumBits         = 11;
+	constexpr uint8_t  kSortKeyViewNumBits         = 12;
 	constexpr uint8_t  kSortKeyViewBitShift        = 64-kSortKeyViewNumBits;
 	constexpr uint64_t kSortKeyViewMask            = uint64_t(BGFX_CONFIG_MAX_VIEWS-1)<<kSortKeyViewBitShift;
 

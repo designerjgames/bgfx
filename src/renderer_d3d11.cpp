@@ -4,7 +4,9 @@
  */
 
 #include "bgfx_p.h"
+#if BX_PLATFORM_XBOXONE
 #include <wrl/client.h>
+#endif
 
 #if BGFX_CONFIG_RENDERER_DIRECT3D11
 #	include "renderer_d3d11.h"
@@ -2245,10 +2247,12 @@ namespace bgfx { namespace d3d11
 			if (!m_lost)
 			{
 				HRESULT hr = S_OK;
-				uint32_t syncInterval = BX_ENABLED(!BX_PLATFORM_WINDOWS)
-					? 1 // sync interval of 0 is not supported on WinRT
-					: !!(m_resolution.reset & BGFX_RESET_VSYNC)
-					;
+				//uint32_t syncInterval = BX_ENABLED(!BX_PLATFORM_WINDOWS)
+				//	? 1 // sync interval of 0 is not supported on WinRT
+				//	: !!(m_resolution.reset & BGFX_RESET_VSYNC)
+				//	;
+
+				uint32_t syncInterval = !!(m_resolution.reset & BGFX_RESET_VSYNC);
 
 				for (uint32_t ii = 1, num = m_numWindows; ii < num && SUCCEEDED(hr); ++ii)
 				{
@@ -2334,26 +2338,16 @@ namespace bgfx { namespace d3d11
 			}
 			else if (suspended)
 			{
-				//m_deviceCtx->Flush();
-				//m_deviceCtx->ClearState();
-				//m_dxgi.trim();
+#if !BX_PLATFORM_XBOXONE
+				m_deviceCtx->Flush();
+				m_deviceCtx->ClearState();
+				m_dxgi.trim();
+				suspend(m_device);
+#else
+				SuspendX();
+#endif
 
-				Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
-				HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
-				//if (FAILED(hr))
-				//	return;
-
-				BX_TRACE("Suspend HR :%d", hr)
-
-				d3dContextX->Suspend(0);
-
-				BX_TRACE("Suspendaaaaayyyyyaaaaaaaaaaaad")
-
-
-
-				//suspend(m_device);
 				m_resolution.reset |= BGFX_RESET_SUSPEND;
-
 				m_suspended = true;
 				return true;
 			}
@@ -2361,24 +2355,9 @@ namespace bgfx { namespace d3d11
 			{
 				resume(m_device);
 
-				//Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
-				//HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
-				////if (FAILED(hr))
-				////	return;
-
-				//BX_TRACE("Resume HR :%d", hr)
-
-				//d3dContextX->Resume();
-
-				//m_deviceCtx->Flush();
-				//m_deviceCtx->ClearState();
-				//m_dxgi.trim();
-
 				BX_TRACE("Resumeeeeeeeeeeeeeeeeed")
 
 				m_resolution.reset &= ~BGFX_RESET_SUSPEND;
-
-				//m_suspended = false;
 			}
 
 			uint32_t maxAnisotropy = 1;
@@ -5354,16 +5333,19 @@ namespace bgfx { namespace d3d11
 
 	void RendererContextD3D11::SuspendX()
 	{
+#if BX_PLATFORM_XBOXONE
 		Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
 		HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
 		if (FAILED(hr))
 			return;
 
 		d3dContextX->Suspend(0);
+#endif
 	}
 
 	void RendererContextD3D11::ResumeX()
 	{
+#if BX_PLATFORM_XBOXONE
 		Microsoft::WRL::ComPtr<ID3D11DeviceContextX> d3dContextX;
 		HRESULT hr = m_deviceCtx->QueryInterface(__uuidof(ID3D11DeviceContextX), reinterpret_cast<void**>(d3dContextX.GetAddressOf()));
 		if (FAILED(hr))
@@ -5374,6 +5356,7 @@ namespace bgfx { namespace d3d11
 		d3dContextX->Resume();
 		BX_TRACE("RendererContextD3D11::ResumeeeeeeeeeeeeeeX HR");
 		m_suspended = false;
+#endif
 	}
 
 	void RendererContextD3D11::submit(Frame* _render, ClearQuad& _clearQuad, TextVideoMemBlitter& _textVideoMemBlitter)
